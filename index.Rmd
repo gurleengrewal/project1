@@ -1,7 +1,7 @@
 ---
 title: 'Project 1: Wrangling, Exploration, Visualization'
 author: "SDS322E"
-date: ''
+date: '11/01/2021'
 output:
   html_document:
     toc: yes
@@ -19,14 +19,25 @@ tidy=TRUE, tidy.opts=list(width.cutoff=60), R.options=list(max.print=100))
 
 ## Data Wrangling, Exploration, Visualization
 
-### Name and EID here
+### Gurleen Grewal, gkg422
 
-#### Introduction 
+#### 
 
-Paragraph or two introducing your datasets and variables, why they are interesting to you, etc.
+
+
 
 ```{R}
-# read your datasets in here, e.g., with read_csv()
+#
+r = getOption("repos")
+r["CRAN"] = "http://cran.us.r-project.org"
+options(repos = r)
+install.packages("Ecdat")
+install.packages("AER")
+library(Ecdat)
+library(AER)
+library(tidyverse)
+Fatalities <- read_csv("Fatalities.csv")
+Fatality <- read_csv("Fatality.csv")
 
 ```
 
@@ -35,16 +46,35 @@ Paragraph or two introducing your datasets and variables, why they are interesti
 If your datasets are tidy already, demonstrate that you can reshape data with pivot wider/longer here (e.g., untidy and then retidy). Alternatively, it may be easier to wait until the wrangling section so you can reshape your summary statistics. Note here if you are going to do this.
 
 ```{R}
-# your tidying code (if applicable; can also wait until wrangling section)
+# 
+Fatalities = select(Fatalities, -c(state))
+
+arrange(Fatalities, across(everything(), desc))
+
+Fatality = select(Fatality, -c(state))
+
+Fatalities %>% mutate(Fatalities, unrate = unemp ) %>% mutate(Fatalities, vmiles = miles) %>% mutate(Fatalities, jaild = jail) %>% mutate(Fatalities, mlda=drinkage) %>% mutate(Fatalities, comserd=service) %>% mutate(Fatalities, perinc = income)
+
+arrange(Fatality, across(everything(), desc))
+
+Fatalities %>% na.omit()
+
+Fatality %>% na.omit()
 ```
 
     
 #### Joining/Merging
 
 ```{R}
-# your joining code
+# 
+anti_join(Fatalities, Fatality, by ="year") %>% summarize(n_distinct(year))
 
-# your joining code
+anti_join(Fatality, Fatalities, by ="year") %>% summarize(n_distinct(year))
+
+inner_join(Fatalities, Fatality, by="year") %>% summarize(n_distinct(year))
+
+full_join <- left_join(Fatality, Fatalities, by="year")
+
 ```
 
 Discussions of joining here. Feel encouraged to break up into more than once code chunk and discuss each in turn.
@@ -52,11 +82,15 @@ Discussions of joining here. Feel encouraged to break up into more than once cod
 ####  Wrangling
 
 ```{R}
-# your wrangling code
+# 
+full_join %>% group_by(year) %>% summarize(mean_miles = mean(miles), sd_miles = sd(miles), max_miles = max(miles), min_miles = min(miles), n())
 
-# your wrangling code
+full_join %>% group_by(year) %>% summarize(mean_unrate = mean(unrate), sd_unrate = sd(unrate), max_unrate = max(unrate), min_unrate = min(unrate), n())
 
-# your wrangling code
+full_join %>% group_by(year) %>% summarize(mean_mlda = mean(mlda), sd_mlda = sd(mlda), max_mlda = max(mlda), min_mlda = min(mlda), n())
+
+full_join %>% group_by(year) %>% summarize(mean_perinc = mean(perinc), sd_perinc = sd(perinc), max_perinc = max(perinc), min_perinc = min(perinc), n())
+
 ```
 
 Your discussion of wrangling section here. Feel encouraged to break up into more than once code chunk and discuss each in turn.
@@ -65,19 +99,26 @@ Your discussion of wrangling section here. Feel encouraged to break up into more
 #### Visualizing
 
 ```{R}
-# your plot 1
+# 
+full_join %>% select(year, jaild, vmiles ) %>% na.omit %>%
+  group_by(year, jaild) %>% summarize(mean=mean(vmiles),se=sd(vmiles)/sqrt(n())) %>% ggplot(aes(year,mean, fill=jaild))+geom_bar(stat="identity", position="dodge")+ geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position="dodge") + coord_flip() +  ggtitle("Number of average miles per driver and mandatory jail time served  from 1982 to 1988")
 ```
 
 Your discussion of plot 1
 
 ```{R}
-# your plot 2
+# 
+ggplot(full_join, aes(x=year, y=vmiles))+ geom_jitter(alpha=.8, aes(color=vmiles)) +geom_boxplot()+ ggtitle("Average miles driven per year by each driver")
+
 ```
 
 Your discussion of plot 2
 
 ```{R}
-# your plot 3
+# 
+ggplot(data = full_join, aes(x = year, y = vmiles   ,color= jaild)) +
+  geom_point(size = 1.5) + xlab("year")+geom_line()+ylab("vmiles")+ scale_color_manual(values = c("yes" = "black", "no" = "purple"))+
+  ggtitle("Number of average miles per driver and mandatory jail time served  from 1982 to 1988 ")
 ```
 
 Your discussion of plot 3
