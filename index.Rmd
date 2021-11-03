@@ -22,8 +22,13 @@ tidy=TRUE, tidy.opts=list(width.cutoff=60), R.options=list(max.print=100))
 ### Gurleen Grewal, gkg422
 
 #### 
+I picked 2 datasets from https://vincentarelbundock.github.io/Rdatasets/datasets.html. The first dataset, "Fatalities," includes information about US traffic fatalities for the lower 48 US states, anually from 1982-1988. This dataset excludes Alaska and Hawaii.The dataset contains 14 variables, state, year, factor indicating year, spirits, states the alcohol consumption, unemp is unemployment rate, income, Per capita personal income in 1987 dollars, emppop, employment/population ratio, beertax is the tax on case of beer, baptist, percent of southern baptist, mormon percent of mormon, drinkage, minimum legal drinking age,dry percent residing in “dry” countries, youngdrivers, p of drivers aged 15–24, miles, average miles per driver, breath preliminary breath test law, jail mandatory jail sentence, service, mandatory community service, fatal number of vehicle fatalities, nfatal, number of night-time vehicle fatalities, sfatal, number of single vehicle fatalities, fatal1517, number of vehicle fatalities, 15–17 year olds, nfatal1517, number of night-time vehicle fatalities, 15–17 year olds, fatal1820, number of vehicle fatalities, 18–20 year olds, nfatal1820, number of night-time vehicle fatalities, 18–20 year olds, fatal2124, number of vehicle fatalities, 21–24 year olds, nfatal2124 number of night-time vehicle fatalities, 21–24 year olds, afatal number of alcohol-involved vehicle fatalities, pop population, pop1517, opulation, 15–17 year olds, pop1820 population, 18–20 year olds, pop2124 population, 21–24 year olds, milestot, total vehicle miles (millions), unempus, US unemployment rate, emppopus, US employment/population ratio, and gsp, GSP rate of change. This dataset is contained in the "AER" package.
 
 
+The second dataset, "Fatality" includes information about 336 observations from 1982-1988 as well and takes into account the drunk driving laws and traffic deaths in the US. It has 336 observations and 10 variables. State, for the state ID code, year, mrall, for traffic fatality rate (deaths per 10000), beertax, for tax on case of beer, mlda, minimum legal drinking age, jaild, mandatory jail sentence, comserd, mandatory community service, vmiles
+average miles per driver,unrate, unemployment rate,and perinc, the per capita personal income. This dataset is contained in the "Ecdat" package. 
+
+I found these datasets interesting as, being a college student, who drives to work and commutes to school, I thought it would be interesting to see how different factors can be responsible for a vehicle fatality. Analysis of this data will help me drive carefully and put into perspective how common vehicle fatalities are in young adults and less experienced drivers. I expect to see younger population with less driving experience get involved in more fatalities. 
 
 
 ```{R}
@@ -47,8 +52,7 @@ If your datasets are tidy already, demonstrate that you can reshape data with pi
 
 ```{R}
 # 
-Fatalities = select(Fatalities, -c(state))
-
+view(Fatalities)
 arrange(Fatalities, across(everything(), desc))
 
 Fatality = select(Fatality, -c(state))
@@ -77,51 +81,58 @@ full_join <- left_join(Fatality, Fatalities, by="year")
 
 ```
 
-Discussions of joining here. Feel encouraged to break up into more than once code chunk and discuss each in turn.
+When anti_joining the two datasets to find the number of distinct values of the ID variable, in this case, "year," we find that there are 0 distinct years in "Fatality" dataset that are not in the "Fatalities" dataset and vice versa. This makes sense because both our datasets have 336 observations and 7 distinct ID variables. Each dataset involves data from 1982-1988.
 
 ####  Wrangling
 
 ```{R}
 # 
-full_join %>% group_by(year) %>% summarize(mean_miles = mean(miles), sd_miles = sd(miles), max_miles = max(miles), min_miles = min(miles), n())
 
-full_join %>% group_by(year) %>% summarize(mean_unrate = mean(unrate), sd_unrate = sd(unrate), max_unrate = max(unrate), min_unrate = min(unrate), n())
+full_join %>% summarize(mean_miles = mean(miles), sd_miles = sd(miles), max_miles = max(miles), min_miles = min(miles), n())
+median(full_join$miles)
 
-full_join %>% group_by(year) %>% summarize(mean_mlda = mean(mlda), sd_mlda = sd(mlda), max_mlda = max(mlda), min_mlda = min(mlda), n())
+full_join %>% summarize(mean_unrate = mean(unrate), sd_unrate = sd(unrate), max_unrate = max(unrate), min_unrate = min(unrate), n())
+median(full_join$unrate)
 
-full_join %>% group_by(year) %>% summarize(mean_perinc = mean(perinc), sd_perinc = sd(perinc), max_perinc = max(perinc), min_perinc = min(perinc), n())
+full_join %>% summarize(mean_mlda = mean(mlda), sd_mlda = sd(mlda), max_mlda = max(mlda), min_mlda = min(mlda), n())
+median(full_join$mlda)
+
+full_join %>% summarize(mean_perinc = mean(perinc), sd_perinc = sd(perinc), max_perinc = max(perinc), min_perinc = min(perinc), n())
+median(full_join$perinc)
+
+full_join %>% mutate(fatalrate= fatal/10000) 
 
 ```
 
-Your discussion of wrangling section here. Feel encouraged to break up into more than once code chunk and discuss each in turn.
+We use dplyr for the wrangling portion of our project. In our dataset "jaild" would be a dichotomous variable since it only has 2 values- yes and no. We therefore give yes, the valueo of 1 and no the value of 0 to make data analysis easier. We find the mean, sd, max and min values and the median by using the summarize function. We find the mean, sd, min and max values and median values for all the numeric variables that are relevant to our data, like, miles, unrate, mlda, and perinc. 
 
 
 #### Visualizing
 
 ```{R}
 # 
-full_join %>% select(year, jaild, vmiles ) %>% na.omit %>%
-  group_by(year, jaild) %>% summarize(mean=mean(vmiles),se=sd(vmiles)/sqrt(n())) %>% ggplot(aes(year,mean, fill=jaild))+geom_bar(stat="identity", position="dodge")+ geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position="dodge") + coord_flip() +  ggtitle("Number of average miles per driver and mandatory jail time served  from 1982 to 1988")
+full_join %>% select(year, jaild, miles ) %>% na.omit %>%
+  group_by(year, jaild) %>% summarize(mean=mean(miles),se=sd(miles)/sqrt(n())) %>% ggplot(aes(year,mean, fill=jaild))+geom_bar(stat="identity", position="dodge")+ geom_errorbar(aes(ymin=mean-se, ymax=mean+se), position="dodge") + coord_flip() +  ggtitle("Number of average miles per driver and mandatory jail time served  from 1982 to 1988")
 ```
 
-Your discussion of plot 1
+According to this plot, we can see that over the years, the average number of miles driver by a driver goes up and also the number of people serving jail time with little standard deviation compared to the previos years. This shows that even though the driver has driven more miles, he is still just as likely to end up in jail as not.
 
 ```{R}
 # 
-ggplot(full_join, aes(x=year, y=vmiles))+ geom_jitter(alpha=.8, aes(color=vmiles)) +geom_boxplot()+ ggtitle("Average miles driven per year by each driver")
+ggplot(full_join, aes(x=year, y=miles))+ geom_jitter(alpha=.8, aes(color=miles)) +geom_boxplot()+ ggtitle("Average miles driven per year by each driver")
 
 ```
 
-Your discussion of plot 2
+In this plot, while using the ggplot function, we used the jeom_jitter function before the geom_boxplot function in order to see the boxplot clearly. This graph further shows that as the year increases, the number of miles driven also increases. 
 
 ```{R}
 # 
-ggplot(data = full_join, aes(x = year, y = vmiles   ,color= jaild)) +
-  geom_point(size = 1.5) + xlab("year")+geom_line()+ylab("vmiles")+ scale_color_manual(values = c("yes" = "black", "no" = "purple"))+
-  ggtitle("Number of average miles per driver and mandatory jail time served  from 1982 to 1988 ")
+ggplot(data = full_join, aes(x = year, y = miles   ,color= jaild)) +
+  geom_point(size = 1.5) + xlab("year")+geom_line()+ylab("miles")+ scale_color_manual(values = c("yes" = "black", "no" = "purple"))+
+  ggtitle("Number of average miles per driver and mandatory jail time served  from 1982 to 1988 ") + geom_jitter(alpha=0.8)
 ```
 
-Your discussion of plot 3
+This graph also further proves our point. Drivers are just as likely to serve jail time for behicle fatalities than not even after gaining more driving experiences.
 
 #### Concluding Remarks
 
